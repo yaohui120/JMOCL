@@ -1,0 +1,20 @@
+{
+    "prefix": "reproduce",
+    "dataset": "5datasets_vit",
+    "data_path": "/mnt/Data/myh/Datasets/5data/",
+    "memory_size": 500,
+    "memory_per_class": 10,
+    "fixed_memory": true,
+    "shuffle": true,
+    "init_cls": 10,
+    "increment": 10,
+    "model_name": "slca_cifar",
+    "model_postfix": "20e",
+    "convnet_type": "vit-b-p16",
+    "device": ["0"],
+    "seed": [1993],
+    "epochs": 20,
+    "ca_epochs": 5,
+    "ca_with_logit_norm": 0.1,
+    "milestones": [18]
+}

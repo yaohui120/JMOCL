@@ -1,0 +1,1 @@
+python main.py --config=./exps/slca_domain.json

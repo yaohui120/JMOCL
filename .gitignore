@@ -1,0 +1,10 @@
+data/
+data_buffer/
+logs/
+saved_model/
+rebuttal/
+__pycache__/
+*.pyc
+.DS_Store
+*.txt
+*.png
