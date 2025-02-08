@@ -194,7 +194,7 @@ class ALinear(nn.Linear):
         self.mask = mask
         # if self.mask < 1:
         self.weight_mask = torch.nn.Parameter(torch.Tensor(self.weight.data))
-        self.weight_mask.data = self.weight.data
+        self.weight_mask.data = self.weight.data/self.weight.data.max()
         if self.bias is not None:
             self.bias.requires_grad = False
         self.adj = 0
@@ -213,9 +213,14 @@ class ALinear(nn.Linear):
     
     def set_mask_ratio(self, t):
         self.mask = t
+        self.weight_mask = torch.nn.Parameter(torch.Tensor(self.weight.data))
+        self.weight_mask.data = self.weight.data/self.weight.data.max()
+        self.adj = GetSubnetUnstructured.apply(self.weight_mask.abs(), self.mask).to(self.weight.device)
+        self.weight_mask.data = self.weight_mask.data * self.adj.detach()
         
     def reset_weight_mask(self):
         self.weight_mask.data = self.weight.data
+        self.weight_mask.data = self.weight.data/self.weight.data.max()
     
     def forward(self, input):
         # self.w = self.weight

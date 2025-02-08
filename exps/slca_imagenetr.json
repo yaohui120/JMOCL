@@ -12,7 +12,7 @@
     "model_postfix": "50e",
     "convnet_type": "our",
     "device": ["6"],
-    "seed": [1997],
+    "seed": [1993],
     "mask_ratio_per_task": 0.03,
     "epochs": 50,
     "lr_base": 0.0001,
