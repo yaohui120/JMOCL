@@ -107,29 +107,21 @@ class SLCA(BaseLearner):
             self.mask_ratio = 1
         else:
             self._network.update_fc(data_manager.get_task_size(self._cur_task))
-            # self.mask_ratio = self.mask_ratio-(self._cur_task//2+1)/100
             self.mask_ratio = 1-self.mask_ratio_per_task*(self._cur_task+1)
-            # self.mask_ratio = 0.4+0.03*(self._cur_task+1)
-            # self.mask_ratio = 0.99
-            # if self._cur_task == 9:
-            #     self.mask_ratio = 0.7
         logging.info('Learning on {}-{}'.format(self._known_classes, self._total_classes))
 
         enabled, mask_enabled = set(), set()
         if self.model == 'vit':
-            # qkv+mlp: 77856768; qkv: 21233664
             for name, param in self._network.named_parameters():
                 param.requires_grad_(False)
                 if ("fc.head" in name):
                     param.requires_grad_(True)
-                # if ("mlp" in name)or("qkv" in name)or("attn.proj" in name):
                 if ("mlp" in name)or("qkv" in name):
                     param.requires_grad_(True)
                 if param.requires_grad:
                     enabled.add(name)
             for name, m in self._network.named_modules():
                 if ("mlp.fc" in name)or("qkv" in name):  
-                # if hasattr(m, "weight_mask"):
                     m.set_mask_ratio(self.mask_ratio)
                     mask_enabled.add(name)
         if self._cur_task == 0:
@@ -139,7 +131,6 @@ class SLCA(BaseLearner):
             self._total_classes_test = 50 if self.args['dataset']=='core50' else 200
         else:
             self._total_classes_test = self._total_classes
-        # self._total_classes = 200
         data, targets, train_dset = data_manager.get_dataset(np.arange(self._known_classes, self._total_classes),
                                                   source='train', mode='train',
                                                   appendent=self._get_memory(), ret_data=True)
@@ -169,13 +160,12 @@ class SLCA(BaseLearner):
 
         self._network.to(self._device)
         
-        file_name = './saved_model/'+self.args['dataset']+'/'+str(self._cur_task)+'_model_re_gamma1_5.pth'
+        file_name = './saved_model/'+self.args['dataset']+'/'+str(self._cur_task)+'_model_re_gamma.pth'
         if os.path.exists(file_name):
             self._network = torch.load(file_name).to(self._device)
             logging.info("Loaded trained model : {}".format(file_name))
         else:        
             self._stage1_training(self.train_loader, self.val_loader, self.test_loader)
-            # torch.save(self._network, file_name)
             logging.info("Saved model in {}".format(file_name))
         del train_dset, val_dset
         del self.train_loader, self.val_loader
@@ -194,7 +184,6 @@ class SLCA(BaseLearner):
             buffer_dataset = data_manager.get_dataset([], source='train', mode='test', appendent=self._get_memory())
         self.buffer_loader = DataLoader(buffer_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
         self._class_means = self.calculate_class_means(self._network, self.buffer_loader)
-        # pdb.set_trace()
         if len(self._multiple_gpus) > 1:
             self._network = self._network.module
         
@@ -262,7 +251,6 @@ class SLCA(BaseLearner):
             losses, losses_val = 0., 0.
             correct, total = 0, 0
             losses = 0.
-            # for i, (_, inputs, targets) in enumerate(train_loader):
             for i, (train_data_batch, val_data_batch) in enumerate(zip(train_loader, val_loader)):
                 train_images, train_targets = train_data_batch[1].to(self._device), train_data_batch[2].to(self._device)
                 val_images, val_targets = val_data_batch[1].to(self._device), val_data_batch[2].to(self._device)
@@ -351,7 +339,6 @@ class SLCA(BaseLearner):
         base_params = self._network.convnet.parameters()
         base_fc_params = [p for p in self._network.fc.parameters() if p.requires_grad==True]
         head_scale = 1. if 'moco' in self.log_path else 1.
-        # lrate*self.bcb_lrscale lrate*head_scale
         base_params = {'params': base_params, 'lr': self.args['lr_base'], 'weight_decay': weight_decay}
         base_fc_params = {'params': base_fc_params, 'lr': self.args['lr_fc'], 'weight_decay': weight_decay}
         network_params = [base_params, base_fc_params]
